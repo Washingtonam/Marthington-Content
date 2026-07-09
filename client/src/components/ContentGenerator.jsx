@@ -8,7 +8,9 @@ function ContentGenerator() {
   const [tone, setTone] = useState(tones[0]);
   const [details, setDetails] = useState('');
   const [generatedPost, setGeneratedPost] = useState('');
+  const [refinementInput, setRefinementInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const handleGenerate = async () => {
@@ -27,6 +29,35 @@ function ContentGenerator() {
     setIsGenerating(false);
   };
 
+  const handleRefine = async () => {
+    if (!generatedPost) return;
+
+    setIsRefining(true);
+
+    try {
+      const response = await fetch('/api/content/refine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: generatedPost,
+          instructions: refinementInput.trim() || 'Make this post more polished and concise.'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to refine the post right now.');
+      }
+
+      const data = await response.json();
+      setGeneratedPost(data.refinedContent || generatedPost);
+      setRefinementInput('');
+    } catch (error) {
+      console.error('Refinement failed:', error);
+    } finally {
+      setIsRefining(false);
+    }
+  };
+
   const handleCopy = async () => {
     if (!generatedPost) return;
 
@@ -37,6 +68,11 @@ function ContentGenerator() {
     } catch (error) {
       console.error('Unable to copy content:', error);
     }
+  };
+
+  const handleClear = () => {
+    setGeneratedPost('');
+    setRefinementInput('');
   };
 
   return (
@@ -51,8 +87,8 @@ function ContentGenerator() {
         </span>
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-        <div className="space-y-5">
+      <div className="mt-8 grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <div className="space-y-5 rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
           <label className="block text-sm font-medium text-slate-300">
             <span className="mb-2 block">Service</span>
             <select
@@ -104,17 +140,27 @@ function ContentGenerator() {
           </button>
         </div>
 
-        <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-white">Ready-to-copy output</h3>
-            <button
-              type="button"
-              onClick={handleCopy}
-              disabled={!generatedPost || isGenerating}
-              className="rounded-full border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition hover:border-cyan-500 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
+        <div className="relative rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h3 className="text-lg font-semibold text-white">Generated Content</h3>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleCopy}
+                disabled={!generatedPost || isGenerating || isRefining}
+                className="rounded-full border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition hover:border-cyan-500 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {copied ? 'Copied!' : 'Copy Post'}
+              </button>
+              <button
+                type="button"
+                onClick={handleClear}
+                disabled={!generatedPost && !refinementInput}
+                className="rounded-full border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition hover:border-rose-500 hover:text-rose-300 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Clear Workspace
+              </button>
+            </div>
           </div>
 
           <textarea
@@ -124,6 +170,32 @@ function ContentGenerator() {
             placeholder="Your generated social post will appear here."
             className="w-full rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm leading-7 text-slate-200 outline-none"
           />
+
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <input
+              type="text"
+              value={refinementInput}
+              onChange={(event) => setRefinementInput(event.target.value)}
+              placeholder="Ask the assistant to modify this post... (e.g., add emojis, make it shorter)"
+              className="flex-1 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-100 outline-none"
+            />
+            <button
+              type="button"
+              onClick={handleRefine}
+              disabled={!generatedPost || isRefining}
+              className="rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isRefining ? 'Refining...' : 'Refine'}
+            </button>
+          </div>
+
+          {isRefining && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-slate-950/70 backdrop-blur-sm">
+              <div className="rounded-2xl border border-cyan-500/30 bg-slate-900/90 px-4 py-3 text-sm text-cyan-300">
+                Assistant is refining your content...
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>

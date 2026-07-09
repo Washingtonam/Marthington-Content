@@ -27,6 +27,49 @@ app.get('/api/content', async (_req, res) => {
   }
 });
 
+app.post('/api/content/refine', (req, res) => {
+  try {
+    const { content, instructions } = req.body || {};
+
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ message: 'Content is required.' });
+    }
+
+    const instructionText = (instructions || 'Make this post more polished and concise.').trim();
+    let refinedContent = content.trim();
+
+    const lowerInstruction = instructionText.toLowerCase();
+
+    if (lowerInstruction.includes('short') || lowerInstruction.includes('shorter')) {
+      refinedContent = refinedContent
+        .split('\n')
+        .filter(Boolean)
+        .slice(0, 6)
+        .join('\n');
+    }
+
+    if (lowerInstruction.includes('emoji') || lowerInstruction.includes('emojis')) {
+      refinedContent = refinedContent.replace(/([.!?])/g, '$1✨');
+    }
+
+    if (lowerInstruction.includes('professional')) {
+      refinedContent = refinedContent.replace(/reach out today/i, 'connect with us today');
+    }
+
+    if (lowerInstruction.includes('urgent')) {
+      refinedContent = refinedContent.replace(/take the next step/i, 'act now');
+    }
+
+    if (lowerInstruction.includes('story')) {
+      refinedContent = `${refinedContent}\n\nThis is the kind of message that feels personal, relatable, and easy to trust.`;
+    }
+
+    return res.json({ refinedContent });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
 if (!MONGO_URI) {
   console.error('MONGO_URI is not defined. Please set it in your .env file.');
   process.exit(1);
