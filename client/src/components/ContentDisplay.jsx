@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 function ContentDisplay() {
   const [contentItems, setContentItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,7 +12,7 @@ function ContentDisplay() {
 
     const fetchContent = async () => {
       try {
-        const response = await fetch('/api/content');
+        const response = await fetch(`${API_BASE}/content`);
 
         if (!response.ok) {
           throw new Error('Unable to load content at the moment.');

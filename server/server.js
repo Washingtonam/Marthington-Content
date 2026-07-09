@@ -39,6 +39,38 @@ app.get('/api/content', async (_req, res) => {
   }
 });
 
+const handleRefineRequest = async (req, res) => {
+  try {
+    const { originalPost, refinementInstructions } = req.body || {};
+
+    if (!originalPost || typeof originalPost !== 'string') {
+      return res.status(400).json({ message: 'originalPost is required.' });
+    }
+
+    if (!gemini) {
+      return res.status(500).json({ message: 'GEMINI_API_KEY is not configured.' });
+    }
+
+    const response = await gemini.models.generateContent({
+      model: 'gemini-2.5-flash',
+      config: {
+        systemInstruction: `You are an expert copywriter for Marthington Synergy Solutions. Your job is to rewrite or modify the user's provided marketing post based strictly on their instructions. Maintain local relevance, use engaging formatting, preserve any crucial links, and ensure a strong Call-To-Action.`,
+        temperature: 0.7
+      },
+      contents: `Original Post:\n"${originalPost}"\n\nModification Instructions: Please ${refinementInstructions || 'make this post more polished and concise.'}`
+    });
+
+    const refinedText = response.text || originalPost.trim();
+
+    return res.status(200).json({ refinedText });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Failed to refine content with the Gemini engine.' });
+  }
+};
+
+app.post('/api/content/refine', handleRefineRequest);
+app.post('/refine', handleRefineRequest);
+
 app.post('/generate', async (req, res) => {
   try {
     const { service, tone, extraDetails } = req.body || {};
@@ -83,35 +115,6 @@ app.post('/generate', async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
-  }
-});
-
-app.post('/refine', async (req, res) => {
-  try {
-    const { originalPost, refinementInstructions } = req.body || {};
-
-    if (!originalPost || typeof originalPost !== 'string') {
-      return res.status(400).json({ message: 'originalPost is required.' });
-    }
-
-    if (!gemini) {
-      return res.status(500).json({ message: 'GEMINI_API_KEY is not configured.' });
-    }
-
-    const response = await gemini.models.generateContent({
-      model: 'gemini-2.5-flash',
-      config: {
-        systemInstruction: `You are an expert copywriter for Marthington Synergy Solutions. Your job is to rewrite or modify the user's provided marketing post based strictly on their instructions. Maintain local relevance, use engaging formatting, preserve any crucial links, and ensure a strong Call-To-Action.`,
-        temperature: 0.7
-      },
-      contents: `Original Post:\n"${originalPost}"\n\nModification Instructions: Please ${refinementInstructions || 'make this post more polished and concise.'}`
-    });
-
-    const refinedText = response.text || originalPost.trim();
-
-    return res.status(200).json({ refinedText });
-  } catch (error) {
-    return res.status(500).json({ message: error.message || 'Failed to refine content with the Gemini engine.' });
   }
 });
 

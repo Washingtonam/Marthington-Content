@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 const services = ['BMS', 'NIMC', 'CAC', 'NPC', 'EFCC', 'Affiliate Program'];
 const tones = ['Professional', 'Urgent', 'Educational', 'Story-driven'];
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 function ContentGenerator() {
   const [service, setService] = useState(services[0]);
@@ -35,12 +36,12 @@ function ContentGenerator() {
     setIsRefining(true);
 
     try {
-      const response = await fetch('/api/content/refine', {
+      const response = await fetch(`${API_BASE}/content/refine`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          content: generatedPost,
-          instructions: refinementInput.trim() || 'Make this post more polished and concise.'
+          originalPost: generatedPost,
+          refinementInstructions: refinementInput.trim() || 'Make this post more polished and concise.'
         })
       });
 
@@ -49,7 +50,7 @@ function ContentGenerator() {
       }
 
       const data = await response.json();
-      setGeneratedPost(data.refinedContent || generatedPost);
+      setGeneratedPost(data.refinedText || data.refinedContent || generatedPost);
       setRefinementInput('');
     } catch (error) {
       console.error('Refinement failed:', error);
