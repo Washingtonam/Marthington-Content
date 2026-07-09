@@ -48,6 +48,7 @@ const handleRefineRequest = async (req, res) => {
     }
 
     if (!gemini) {
+      console.error('Gemini client is not initialized. Missing GEMINI_API_KEY.');
       return res.status(500).json({ message: 'GEMINI_API_KEY is not configured.' });
     }
 
@@ -60,11 +61,15 @@ const handleRefineRequest = async (req, res) => {
       contents: `Original Post:\n"${originalPost}"\n\nModification Instructions: Please ${refinementInstructions || 'make this post more polished and concise.'}`
     });
 
-    const refinedText = response.text || originalPost.trim();
+    const refinedText = response?.text || originalPost.trim();
 
     return res.status(200).json({ refinedText });
   } catch (error) {
-    return res.status(500).json({ message: error.message || 'Failed to refine content with the Gemini engine.' });
+    console.error('Gemini refinement failed:', error);
+    return res.status(500).json({
+      message: 'Failed to refine content with the Gemini engine.',
+      details: error?.message || 'Unknown error'
+    });
   }
 };
 
