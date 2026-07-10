@@ -363,10 +363,10 @@ function ContentGenerator() {
                 onChange={(event) => setSelectedAccountId(event.target.value)}
                 className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none"
               >
-                {accounts.length === 0 ? (
+                {facebookAccounts.length === 0 ? (
                   <option value="">No accounts saved yet</option>
                 ) : (
-                  accounts.map((account) => (
+                  facebookAccounts.map((account) => (
                     <option key={account._id} value={account._id}>
                       {account.name} ({account.pageId})
                     </option>
@@ -409,9 +409,9 @@ function ContentGenerator() {
               <p className="mt-3 text-sm text-slate-400">{accountMessage}</p>
             ) : null}
 
-            {selectedAccountId && accounts.find((account) => account._id === selectedAccountId) ? (
+            {selectedAccountId && facebookAccounts.find((account) => account._id === selectedAccountId) ? (
               <p className="mt-3 text-sm text-cyan-300">
-                Selected: {accounts.find((account) => account._id === selectedAccountId)?.name}
+                Selected: {facebookAccounts.find((account) => account._id === selectedAccountId)?.pageName}
               </p>
             ) : null}
           </div>
