@@ -20,7 +20,7 @@ function ContentGenerator() {
     setCopied(false);
 
     try {
-      const response = await fetch(`${API_BASE}/generate`, {
+      const response = await fetch(`${API_BASE}/content/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
