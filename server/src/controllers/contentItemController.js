@@ -174,6 +174,8 @@ export const listFacebookAccounts = async (_req, res) => {
   }
 };
 
+export const listSocialAccounts = listFacebookAccounts;
+
 export const addFacebookAccount = async (req, res) => {
   try {
     const { pageName, fbPageId, fbPageAccessToken } = req.body || {};
@@ -193,6 +195,8 @@ export const addFacebookAccount = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+export const createSocialAccount = addFacebookAccount;
 
 export const updateFacebookAccount = async (req, res) => {
   try {
@@ -215,6 +219,8 @@ export const updateFacebookAccount = async (req, res) => {
   }
 };
 
+export const updateSocialAccount = updateFacebookAccount;
+
 export const deleteFacebookAccount = async (req, res) => {
   try {
     const { id } = req.params;
@@ -229,6 +235,8 @@ export const deleteFacebookAccount = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+export const deleteSocialAccount = deleteFacebookAccount;
 
 export const createContentItem = async (req, res) => {
   try {
