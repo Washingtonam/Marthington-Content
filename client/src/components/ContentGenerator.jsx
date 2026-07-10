@@ -17,17 +17,39 @@ function ContentGenerator() {
   const handleGenerate = async () => {
     setIsGenerating(true);
     setGeneratedPost('');
+    setCopied(false);
 
-    await new Promise((resolve) => setTimeout(resolve, 900));
+    try {
+      const response = await fetch(`${API_BASE}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service,
+          tone,
+          extraDetails: details
+        })
+      });
 
-    const contextText = details.trim()
-      ? `Additional context: ${details.trim()}`
-      : 'Focused on clarity, trust, and a strong call to action.';
+      const data = await response.json().catch(() => ({}));
 
-    const post = `Marthington Synergy Solutions\n\nService: ${service}\nTone: ${tone}\n\n${contextText}\n\nWe are helping people take the next step with ${service} in a clear, credible, and results-focused way. This message is tailored to spark interest, build confidence, and encourage action.\n\nIf you are ready to move forward, reach out today and let us help you get started.\n\n#MarthingtonSynergySolutions #${service.replace(/\s+/g, '')}`;
+      if (!response.ok) {
+        throw new Error(data?.message || 'Unable to generate the post right now.');
+      }
 
-    setGeneratedPost(post);
-    setIsGenerating(false);
+      setGeneratedPost(data.content || data.generatedText || data.post || '');
+    } catch (error) {
+      console.error('Generation failed:', error);
+
+      const contextText = details.trim()
+        ? `Additional context: ${details.trim()}`
+        : 'Focused on clarity, trust, and a strong call to action.';
+
+      const fallbackPost = `Marthington Synergy Solutions\n\nService: ${service}\nTone: ${tone}\n\n${contextText}\n\nWe are helping people take the next step with ${service} in a clear, credible, and results-focused way. This message is tailored to spark interest, build confidence, and encourage action.\n\nIf you are ready to move forward, reach out today and let us help you get started.\n\n#MarthingtonSynergySolutions #${service.replace(/\s+/g, '')}`;
+
+      setGeneratedPost(fallbackPost);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleRefine = async () => {

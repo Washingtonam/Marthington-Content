@@ -76,7 +76,7 @@ const handleRefineRequest = async (req, res) => {
 app.post('/api/content/refine', handleRefineRequest);
 app.post('/refine', handleRefineRequest);
 
-app.post('/generate', async (req, res) => {
+const handleGenerateRequest = async (req, res) => {
   try {
     const { service, tone, extraDetails } = req.body || {};
 
@@ -121,7 +121,10 @@ app.post('/generate', async (req, res) => {
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
-});
+};
+
+app.post('/api/generate', handleGenerateRequest);
+app.post('/generate', handleGenerateRequest);
 
 if (!MONGO_URI) {
   console.error('MONGO_URI is not defined. Please set it in your .env file.');
