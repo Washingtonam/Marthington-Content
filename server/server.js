@@ -5,6 +5,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import contentRouter from './src/routes/content.js';
+import facebookAccountsRouter from './src/routes/facebookAccounts.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,6 +19,7 @@ const MONGO_URI = process.env.MONGO_URI;
 app.use(cors());
 app.use(express.json());
 app.use('/api/content', contentRouter);
+app.use('/api/facebook-accounts', facebookAccountsRouter);
 
 if (!MONGO_URI) {
   console.error('MONGO_URI is not defined. Please set it in your .env file.');

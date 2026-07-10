@@ -1,5 +1,7 @@
+import axios from 'axios';
 import { GoogleGenAI } from '@google/genai';
 import ContentItem from '../models/ContentItem.js';
+import FacebookAccount from '../models/FacebookAccount.js';
 
 const gemini = process.env.GEMINI_API_KEY
   ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
@@ -96,6 +98,135 @@ export const refineContentItem = async (req, res) => {
       message: 'Failed to refine content with the Gemini engine.',
       details: error?.message || 'Unknown error'
     });
+  }
+};
+
+export const publishToFacebook = async (req, res) => {
+  try {
+    const { contentItemId, facebookAccountId } = req.body || {};
+
+    if (!contentItemId) {
+      return res.status(400).json({ message: 'contentItemId is required.' });
+    }
+
+    const contentItem = await ContentItem.findById(contentItemId);
+
+    if (!contentItem) {
+      return res.status(404).json({ message: 'Content item not found.' });
+    }
+
+    const contentBody = contentItem.contentBody?.trim();
+
+    if (!contentBody) {
+      return res.status(400).json({ message: 'Content item has no contentBody to publish.' });
+    }
+
+    const facebookAccount = facebookAccountId
+      ? await FacebookAccount.findById(facebookAccountId)
+      : await FacebookAccount.findOne({ isActive: true });
+
+    if (!facebookAccount) {
+      return res.status(404).json({ message: 'No Facebook account is configured for publishing.' });
+    }
+
+    const response = await axios.post(
+      `https://graph.facebook.com/v20.0/${facebookAccount.fbPageId}/feed`,
+      null,
+      {
+        params: {
+          message: contentBody,
+          access_token: facebookAccount.fbPageAccessToken
+        }
+      }
+    );
+
+    const facebookPostId = response?.data?.id;
+
+    if (!facebookPostId) {
+      return res.status(500).json({ message: 'Facebook publish response did not include a post ID.' });
+    }
+
+    return res.status(200).json({
+      message: 'Post published to Facebook successfully.',
+      facebookPostId,
+      account: {
+        id: facebookAccount._id,
+        pageName: facebookAccount.pageName,
+        fbPageId: facebookAccount.fbPageId
+      }
+    });
+  } catch (error) {
+    console.error('Facebook publish failed:', error?.response?.data || error.message);
+    return res.status(500).json({
+      message: 'Failed to publish content to Facebook.',
+      details: error?.response?.data?.error?.message || error.message
+    });
+  }
+};
+
+export const listFacebookAccounts = async (_req, res) => {
+  try {
+    const accounts = await FacebookAccount.find({ isActive: true }).sort({ createdAt: -1 });
+    const publicAccounts = accounts.map(({ _id, pageName, fbPageId }) => ({ _id, pageName, fbPageId }));
+    return res.status(200).json(publicAccounts);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const addFacebookAccount = async (req, res) => {
+  try {
+    const { pageName, fbPageId, fbPageAccessToken } = req.body || {};
+
+    if (!pageName || !fbPageId || !fbPageAccessToken) {
+      return res.status(400).json({ message: 'pageName, fbPageId, and fbPageAccessToken are required.' });
+    }
+
+    const account = await FacebookAccount.create({
+      pageName,
+      fbPageId,
+      fbPageAccessToken
+    });
+
+    return res.status(201).json(account);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateFacebookAccount = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { pageName, fbPageId, fbPageAccessToken, isActive } = req.body || {};
+
+    const updatedAccount = await FacebookAccount.findByIdAndUpdate(
+      id,
+      { pageName, fbPageId, fbPageAccessToken, isActive },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedAccount) {
+      return res.status(404).json({ message: 'Facebook account not found.' });
+    }
+
+    return res.status(200).json(updatedAccount);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteFacebookAccount = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedAccount = await FacebookAccount.findByIdAndDelete(id);
+
+    if (!deletedAccount) {
+      return res.status(404).json({ message: 'Facebook account not found.' });
+    }
+
+    return res.status(200).json({ message: 'Facebook account deleted successfully.' });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
 
